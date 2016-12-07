@@ -39,7 +39,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def generateQR(self):
         """
-        
+
         """
         data = unicode(self.textEdit.toPlainText())
         if DEBUG_MODE:
