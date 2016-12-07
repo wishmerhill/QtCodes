@@ -35,7 +35,11 @@ class MainWindow(QtGui.QMainWindow):
         # load the ui
         self.ui = PyQt4.uic.loadUi('ui/mainWindow.ui', self)
 
-        self.pushButton.clicked.connect(self.generateQR)
+        self.generateButton.clicked.connect(self.generateQR)
+
+        self.selectFileButton.clicked.connect(self.selectFile)
+
+        self.filename = 'filename.png'
 
     def generateQR(self):
         """
@@ -46,13 +50,17 @@ class MainWindow(QtGui.QMainWindow):
             print(data)
         qr = pyqrcode.create(data, error='H', mode=None, encoding=None)
 
-        qr.png('filename.png', scale=2)
-        pixmap = QtGui.QPixmap('filename.png')
-        # width = pixmap.width()
-        # height = pixmap.height()
+        qr.png(self.filename, scale=2)
+        pixmap = QtGui.QPixmap(self.filename)
+
         self.qrPreview.setPixmap(pixmap)
+
         self.qrPreview.adjustSize()
-        return
+
+    def selectFile(self):
+        self.filenameEdit.setText(QtGui.QFileDialog.getOpenFileName())
+        self.filename=unicode(self.filenameEdit.text())
+
 
 
 
