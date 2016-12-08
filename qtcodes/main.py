@@ -1,4 +1,4 @@
-#!/usr/bin/python ~/devel/QtCodes/main.py
+#!/usr/bin/python ~/devel/QtCodes/qtcodes/main.py
 
 # define authorship information
 __authors__ = ['Alberto "wishmehill" Azzalini']

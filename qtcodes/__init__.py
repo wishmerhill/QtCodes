@@ -1,4 +1,4 @@
-#!/usr/bin/python ~/devel/QtCodes/__init__.py
+#!/usr/bin/python ~/devel/QtCodes/qtcodes/__init__.py
 
 """
 Some useful text should go here
