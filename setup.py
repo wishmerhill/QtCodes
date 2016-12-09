@@ -10,5 +10,5 @@ setup(
     author='Alberto Azzalini',
     author_email='alberto.azzalini@gmail.com',
     long_description=open('README.md').read(),
-    url='https://github.com/wishmerhill/QtCodes',
+    url='https://github.com/wishmerhill/QtCodes', requires=['pyqrcode', 'PyQt4', 'vobject', 'PyQt4']
 )
