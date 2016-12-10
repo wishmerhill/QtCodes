@@ -28,17 +28,33 @@ import vobject
 from PyQt4 import QtGui, QtCore
 
 
+"""
+TODO: let the quitDialog appear even when the main windows is closed in other ways;
+TODO: let the program check for 'unsaved' material also in the vCard fields;
+FIXME: get rid of my DEBUG_MODE and stick to the right way as in https://docs.python.org/2/howto/logging.html
+"""
+
+
 class quitDialog(QtGui.QDialog):
     """
-    the quit dialog
+    Just the quit dialog.
+    I added a button box instead of single buttons. 
+    TODO: minor design flaws, like *unresizeable* widget.
     """
 
     def __init__(self, parent=None):
         super(quitDialog, self).__init__(parent)
 
         # load the ui
+        # NOTE: ui is done with qtdesigner
         self.ui = PyQt4.uic.loadUi('ui/quitDialog.ui', self)
+        
+        # connect the buttons to the appropriate signals
+        
+        # quit the program
         self.buttonBox.accepted.connect(app.quit)
+        
+        # dismiss the quit dialog
         self.buttonBox.rejected.connect(self.close)
 
 
@@ -52,87 +68,129 @@ class MainWindow(QtGui.QMainWindow):
 
         # load the ui
         self.ui = PyQt4.uic.loadUi('ui/mainWindow.ui', self)
-
+        
+        # **************************************
+        # setup some class globals for the vCard
         self.family = ""
-        self.given = ""
+        self.given  = ""
         self.prefix = ""
+        # ***************************************
 
         # Setting the Text tab as active. Better so.
         if DEBUG_MODE:
             print("DEBUG: Setting plain text tab as active")
         self.tabWidget.setCurrentIndex(0)
 
+        # set the current date as default in the birthday field
+        # FIXME: is it really clever (or needed)? What would be a better option?
         self.dateBirthday.setDateTime(QtCore.QDateTime.currentDateTime())
 
+        # Set the date format in Italian standard.
+        # FIXME: maybe let the user choose? Far too advanced
         self.dateBirthday.setDisplayFormat("dd MMMM yyyy")
 
+        # Start connecting signals to the appropriate functions
+        # TIP: I choose to use une function per task, avoiding all purpose functions which prooved to be
+        #      way too complex (I have sender() and its results...)
+        
+        # This is the core: generate the QR (two steps: setUpQR checks the active tab
+        # then runs the appropriate generator
         self.generateButton.clicked.connect(self.setUpQR)
 
+        # a simple way to open a file selection window
         self.selectFileButton.clicked.connect(self.selectFile)
-
+        # and a default filename, full of creativity.
+        self.filename = 'filename.png'
+        
+        
+        # the quit action in the File menu. A classical approach, isn't it?
         self.actionQuit.triggered.connect(self.doClose)
 
+        # let's do something it the tab is changed. Actually, I use it to initilize the vCard stuff.
+        # TODO: check if there is a better way, maybe doing it directly in the __init__?
         self.tabWidget.currentChanged.connect(self.tabChanged)
 
+        # the whole vCard fields stuff.
+        # FIXME: naming convention is crap: try to get more consistency!
         self.lineName.textChanged.connect(self.updatevCardName)
         self.lineSurname.textChanged.connect(self.updatevCardSurname)
         self.linePrefix.textChanged.connect(self.updatevCardPrefix)
         self.lineEmail.textChanged.connect(self.updatevCardEmail)
+        
         self.checkBoxPhone.stateChanged.connect(self.enablePhone)
         self.linePhone.textChanged.connect(self.updatevCardPhone)
+        
         self.checkBoxOffice.stateChanged.connect(self.enableOffice)
         self.lineOffice.textChanged.connect(self.updatevCardOffice)
+        
         self.checkBoxMobile.stateChanged.connect(self.enableMobile)
         self.lineMobile.textChanged.connect(self.updatevCardMobile)
-
-        self.filename = 'filename.png'
-
+        
+        # initialize the vCard global container. Later on it will be a vobject.vCard object.
         self.vCard = None
 
     def updatevCardName(self, data):
         """
-
-        :param data:
-        :return:
+        We just update the "given" name.
+        FIXME: as noted before, inconsistency in naming!
         """
         self.given = unicode(data)
         self.updateName()
 
     def updatevCardSurname(self, data):
         """
-
-        :param data:
-        :return:
+        We just update the "family" name.
+        FIXME: as noted before, inconsistency in naming!
         """
         self.family = unicode(data)
         self.updateName()
 
     def updatevCardPrefix(self, data):
         """
-
-        :param data:
-        :return:
+        We just update the "prefix" of the name.
         """
         self.prefix = unicode(data)
         self.updateName()
+        
+    def updateName(self):
+        """
+        Taking care of both N and FN mandatory vCard attributes.
+        we don't need any argument as we use class globals already defined.
+        """
+        # fill in
+        self.vCard.n.value = vobject.vcard.Name(given=self.given, family=self.family, prefix=self.prefix)
+        
+        # this was tricky (for me) as I had to use conditional string formatting to avoid spaces 
+        # where they were not needed.
+        # Proud of myself! :)
+        self.vCard.fn.value = (self.prefix + "{}" + self.given + "{}" + self.family).format(" " if self.prefix != "" else "",
+                                                                                            " " if (self.given != "") and (self.family != "") else "")
+        if DEBUG_MODE:
+            print(self.vCard.fn.value)
+        self.updatevCard()
 
     def updatevCardEmail(self, data):
         """
-
-        :param data:
-        :return:
+        Updating the 'email'.
+        TODO: consider if we want more than one email address?
         """
+        # check if email attribute already exists: if not create it.
+        # FIXME: use variables to store the single objects, as done for the many phone numbers
+        #        it's easier to clean up the vCard data if needed!
         if not hasattr(self.vCard, 'email'):
             if DEBUG_MODE:
                 print('Adding attribute "email"')
             self.vCard.add('email')
+        # same as above, just for the type_param
         if not hasattr(self.vCard.email, 'type_param'):
             if DEBUG_MODE:
                 print('Adding attribute "type_param = INTERNET"')
             self.vCard.email.type_param = "INTERNET"
 
+        # fill in the value...
         self.vCard.email.value = unicode(data)
 
+        # update the vCard
         self.updatevCard()
 
     def enablePhone(self):
@@ -263,13 +321,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.updatevCard()
 
-    def updateName(self):
-        self.vCard.n.value = vobject.vcard.Name(given=self.given, family=self.family, prefix=self.prefix)
-        self.vCard.fn.value = (self.prefix + "{}" + self.given + "{}" + self.family).format(" " if self.prefix != "" else "",
-                                                                                            " " if (self.given != "") and (self.family != "") else "")
-        if DEBUG_MODE:
-            print(self.vCard.fn.value)
-        self.updatevCard()
+    
 
     def updatevCard(self):
         vCardText = self.vCard.serialize()
