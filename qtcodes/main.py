@@ -195,8 +195,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def enablePhone(self):
         """
-
-        :return:
+        In order to avoid having empty attribute flieds, there are some checkbox in the gui.
+        Whenever a checkbox is unchecked, we destroy the attribute, leaving any written text in the 
+        line edit, just for a possible future use.
         """
         if self.checkBoxPhone.isChecked():
             # adding 'tel' attribute upon checking the checkBox
@@ -214,6 +215,8 @@ class MainWindow(QtGui.QMainWindow):
         elif not self.checkBoxPhone.isChecked():
 
             # remove the attribute if checkbox is unflagged
+            # NOTE: the remove method works with an object, thus 
+            #       the need to store attributes in a variable.
             self.vCard.remove(self.phone)
 
             # disable the lineEdit widget
@@ -238,8 +241,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def enableOffice(self):
         """
-
-        :return:
+        In order to avoid having empty attribute flieds, there are some checkbox in the gui.
+        Whenever a checkbox is unchecked, we destroy the attribute, leaving any written text in the 
+        line edit, just for a possible future use.
         """
         if self.checkBoxOffice.isChecked():
             # adding 'tel' attribute upon checking the checkBox
@@ -280,8 +284,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def enableMobile(self):
         """
-
-        :return:
+        In order to avoid having empty attribute flieds, there are some checkbox in the gui.
+        Whenever a checkbox is unchecked, we destroy the attribute, leaving any written text in the 
+        line edit, just for a possible future use.
         """
         if self.checkBoxMobile.isChecked():
             # adding 'tel' attribute upon checking the checkBox
@@ -336,20 +341,16 @@ class MainWindow(QtGui.QMainWindow):
         :return:
         """
         if (tabIndex == 1) and (not self.vCard):
+            # self.vCard was initialized in the __init__, as good boys do.
             self.vCard = vobject.vCard()
             self.vCard.add('fn')
             self.vCard.add('n')
 
             self.updatevCard()
 
-            # self.work = self.vCard.add('tel')
-            # self.phone = self.vCard.add('tel')
-            # self.mobile = self.vCard.add('tel')
-
     def setUpQR(self):
         """
-        check what to do and just do it
-
+        check what to do and get the data from the right place
         """
 
         activeTab = self.tabWidget.currentIndex()
@@ -367,7 +368,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def PlainTextQR(self):
         """
-
+        get the data from the plain text tab
         """
         data = unicode(self.textEdit.toPlainText())
         if DEBUG_MODE:
@@ -378,7 +379,7 @@ class MainWindow(QtGui.QMainWindow):
     def vCardQR(self):
         """
         Will use vobjects to generate an appropriate QR.
-        Actually, we should use the text in the preview to generate the QR.
+        Data are taken from the vCardPreview area, filled with care by other functions.
         """
         data = unicode(self.textvCardPreview.toPlainText())
 
@@ -427,6 +428,7 @@ class MainWindow(QtGui.QMainWindow):
 
 if (__name__ == '__main__'):
     # brutal way to catch the CTRL+C signal if run in the console...
+    # TODO: should always ask for confirmation, though.
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = None
